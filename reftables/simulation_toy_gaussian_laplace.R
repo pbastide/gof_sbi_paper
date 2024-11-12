@@ -18,7 +18,7 @@
 #
 # This script simulates reference tables using the toy Gaussian - Laplace models.
 #
-# It saves all the simulated data in the "data/gaussianlaplace" repository.
+# It saves all the simulated data in the "reftables/gaussianlaplace" repository.
 
 ################################################################################
 ## Load packages
@@ -29,9 +29,14 @@ library(gofabcpkg)
 library(doParallel)
 library(foreach)
 
+################################################################################
+## File management
 library(here)
 datestamp_day <- format(Sys.time(), "%Y-%m-%d")
+dir.create(here("reftables", "gaussianlaplace"))
 
+################################################################################
+## Parameters
 n.ref = 100*1000
 n.test = 1000
 n.calib = 1000
@@ -40,6 +45,8 @@ rmax = 20 #nbr de L-moments
 lmomnameall <- c("salmu", "Lmoments") ### samlmu ou Lmoments ???
 refnameall <- c("gaussian", "laplace")
 
+################################################################################
+## Simulation
 for (lmomname in lmomnameall) {
   for (refname in refnameall) {
     for (testname in refnameall) {
@@ -116,7 +123,7 @@ for (lmomname in lmomnameall) {
       res.pca <- FactoMineR::PCA(trainall, graph = FALSE)
       colo <-c(rep(1,n.ref),rep(2,n.test))
       mix <- c(sample(1:n.ref, 2000), (n.ref+1):(n.ref+n.test))
-      pdf(file = here("data", "gaussianlaplace", paste0(results_name, "_pca.pdf")))
+      pdf(file = here("reftables", "gaussianlaplace", paste0(results_name, "_pca.pdf")))
       plot(res.pca$ind$coord[mix,c(1,2)],col=colo[mix],pch="*")
       dev.off()
 
@@ -131,9 +138,9 @@ for (lmomname in lmomnameall) {
                    param.test = param.test,
                    lmonfun = lmonfun,
                    datestamp_day = datestamp_day,
-                   param_upper_bound = param_upper_bound,
-                   param_lower_bound = param_upper_bound),
-              file =  here("data", "gaussianlaplace", paste0(results_name, "_data.rds")))
+                   param_upper_bound = c(10, 4),
+                   param_lower_bound = c(-10, 1)),
+              file =  here("reftables", "gaussianlaplace", paste0(results_name, "_data.rds")))
     }
   }
 }

@@ -27,14 +27,14 @@
 #   - R: version 4.4. or above.
 #   - abcgof: version v0.0.1. (see below)
 #
-# DATA:
-#   - "gaussianlaplace": must be simulated using the script "data/simulation_toy_gaussian_laplace.R"
+# REFERENCE TABLES:
+#   - "gaussianlaplace": must be simulated using the script "reftables/simulation_toy_gaussian_laplace.R"
 #   - "depindep": TODO
 #   - "human": TODO
 #
 # NEW POINT SIMULATIONS:
 # The post-inference tests require the simulation of new particles from the reference model.
-#   - "gaussianlaplace": packages used in "data/simulation_toy_gaussian_laplace.R" must be installed on the machine
+#   - "gaussianlaplace": packages used in "reftables/simulation_toy_gaussian_laplace.R" must be installed on the machine
 #   - "depindep": TODO
 #   - "human": TODO
 #
@@ -82,7 +82,7 @@ k_range <- c(5, 20)
 
 ################################################################################
 ## Parameters
-# gaussianlaplace example: must match the date of the "data/simulation_toy_gaussian_laplace.R" script.
+# gaussianlaplace example: must match the date of the "reftables/simulation_toy_gaussian_laplace.R" script.
 datestampe_gaussianlaplace <- "2024-03-19"
 
 ################################################################################
@@ -127,7 +127,7 @@ for (dataname in c("gaussianlaplace", "depindep", "human")) {
       data_name <- paste0("2024-03-19", "_toy_gof_freq_lmom_", lmomname, "_ref_", refname, "_test_", testname)
       results_name <- paste0(datestamp_day, "_gof_resim_", dataname, "_lmom_", lmomname, "_ref_", refname, "_test_", testname)
       ## Load dataset
-      all_data <- readRDS(here("data", "gaussianlaplace", paste0(data_name, "_data.rds")))
+      all_data <- readRDS(here("reftables", "gaussianlaplace", paste0(data_name, "_data.rds")))
 
       ## Format data
       # reference table
@@ -148,8 +148,8 @@ for (dataname in c("gaussianlaplace", "depindep", "human")) {
 
       ## transformation of parameters (for loclin and ridge regression)
       param_transform <- rep("logit", 2)
-      param_lower_bound <- c(-10, 1)
-      param_upper_bound <- c(10, 4)
+      param_lower_bound <- all_data$param_lower_bound
+      param_upper_bound <- all_data$param_upper_bound
       if (refname == "laplace") {
         param_lower_bound[2] <- param_lower_bound[2] / sqrt(2)
         param_upper_bound[2] <- param_upper_bound[2] / sqrt(2)

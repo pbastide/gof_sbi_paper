@@ -6,9 +6,8 @@ Please refer to the `README` files in each sub-directory for more information on
 All the `R` scripts assume that the working directory is the root directory
 (location of the `.Rproj` and `.here` files).
 
-* `data`: 
+* `reftables`: simulated reference tables
   * `simulation_toy_gaussian_laplace.R`: R script to generate the toy "Laplace - Gaussian" dataset
-  * `gaussianlaplace` repository containing the toy "Laplace - Gaussian" dataset
 
 * `diyabc_simulation_scripts`: Simulation scripts for diyabc
   * `sim_depindep.R`: simulation script for the "Dep-Indep" example
