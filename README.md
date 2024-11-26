@@ -2,11 +2,7 @@
 
 ## Content
 
-Please refer to the `README` files in each sub-directory for more information on the analyses.
-All the `R` scripts assume that the working directory is the root directory
-(location of the `.Rproj` and `.here` files).
-
-* `diyabc_reftables`: simulated reference tables
+* `diyabc_reftables`: simulated reference tables. Please see dedicated README file.
   * `gaussianlaplace`: toy "Laplace - Gaussian" dataset
     * `simulation_toy_gaussian_laplace.R`: R script to generate the toy "Laplace - Gaussian" dataset
   * `depindep`: Dep-Indep dataset
@@ -37,6 +33,8 @@ All the `R` scripts assume that the working directory is the root directory
   * `depindep_resim`: header files for "Dep-Indep" simulation
   * `sim_humanfast.R`: simulation script for the "Human-like" example
   * `humanfast_resim`: header files for "Human-like" simulation
+  * `sim_humanreal.R`: simulation script for the "Human" real example
+  * `humanrealt_resim`: header files for "Human" real simulation
 
 * `gof_sbi_paper.Rproj`: Root `Rproj` file.
 
@@ -61,6 +59,8 @@ All the `R` scripts assume that the working directory is the root directory
 
 * `R`: https://cran.r-project.org/index.html.
   Version 4.4. or above.
+  All the `R` scripts assume that the working directory is the root directory
+  (location of the `.Rproj` and `.here` files).
 
 * `abcgof`: https://github.com/pbastide/abcgof
   Version v0.0.1.
