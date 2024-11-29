@@ -42,7 +42,7 @@
   * `GOF_PRE_POST_HUMAN.R` R script to perform GOF analyses on the real human dataset
   
 * `human_data`: data files for Human analysis
-    * `statobsRF_maf_hudson_SNP_1_12000.txt` Observed dataset for first 12000 positions
+    * `statobsRF_maf_hudson_SNP_1_12000.txt` Observed dataset SNP positions 1 to 120000
     * `statobsRF_maf_hudson_SNP_12001_24000.txt` Observed dataset for last 12000 positions
 
 * `simulation_study`: script to reproduce the simulation study.
