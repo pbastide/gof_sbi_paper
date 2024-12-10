@@ -146,7 +146,7 @@ cat("\n")
   write.table(file=paste0(output.file.prefix,"_param_sumstats_S",i.scen,".txt"),cbind(PARAM.S.scen.ready.for.diyabc.sans.na.bon.ordre.param.final,STAT.S.scen),quote=F,col.names=T,row.names=F)
 }
 
-# Note: the txt file paste0(output.file.prefix,"_param_S",i.scen,".txt") are those that will be used using the -o option in diyabc
+# Note: the txt file paste0(output.file.prefix,"_param_S",i.scen,".txt") are those that can be used using the -o option in diyabc
 # to generate sumstats from a given set of parameter values
 
 
