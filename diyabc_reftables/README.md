@@ -67,7 +67,8 @@ For the post-inference GOF analysis, run the scripts in the following order:
 > (pre-inference GOF),
 > and the datafiles
 > `human_12000snp_maf_hudson_reftableRF_S2S3_110000PerScen_param_S[2-3].txt` instead of
-> `yellow_points_from_human_12000snp_maf_hudson_reftableRF_S2S3_110000PerScen_param_S[2-3].txt`.
+> `yellow_points_from_human_12000snp_maf_hudson_reftableRF_S2S3_110000PerScen_param_S[2-3].txt`
+> (post-inference GOF).
 > For practical reasons, we however used the scripts
 > `03_human_real_data_12000snp_maf_hudson_reftableRF_allS_11000PerScen_param.sh` and
 > `06_human_real_data_12000snp_maf_hudson_reftableRF_S2S3only_110000PerScen_param.sh`
