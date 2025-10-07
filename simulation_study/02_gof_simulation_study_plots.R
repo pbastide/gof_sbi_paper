@@ -31,11 +31,21 @@
 library(here)
 library(ggplot2)
 library(tidyr)
+library(dplyr)
 
 ################################################################################
 # Load Data
 datestamp_day <- "2024-04-24"
 all_res_files <- list.files(path = here("results"), pattern = paste0(datestamp_day, "_*.*.rds"), full.names = TRUE)
+
+## replace laplacegaussian with newer runs
+all_res_files <- all_res_files[!grepl("gaussianlaplace_lmom_salmu_ref_laplace_test_gaussian_nrep_.*_prior", all_res_files)]
+all_res_files <- all_res_files[!grepl("depindep_ref_scenario2_test_scenario1_nrep_*._prior", all_res_files)]
+all_res_files <- all_res_files[!grepl("human_ref_scenario2_test_scenario3_nrep_*._prior", all_res_files)]
+datestamp_day <- "2025-10-01"
+all_res_files <- c(all_res_files,
+                   list.files(path = here("results"), pattern = paste0(datestamp_day, "_*.*.rds"), full.names = TRUE))
+
 all_res <- lapply(all_res_files, function(ff) readRDS(file = ff))
 
 results_name <- paste0(datestamp_day, "_gof_resim_all")
@@ -75,35 +85,47 @@ datpower$dataset <- factor(datpower$dataset, levels = c("gaussianlaplace", "depi
 # datpower$nref <- factor(datpower$nref)
 levels(datpower$dataset) <- c("Laplace - Gaussian", "Dep-Indep", "Human-like")
 
-datpowermax <- subset(datpower, (K == "max" & score == "lof") |  (K == 1 & score == "kNN"))
+datpowermax <- subset(datpower, K == "max")
+datpowermaxone <- subset(datpower, (K == "max" & score == "lof") |  (K == 1 & score == "kNN"))
 datpower <- subset(datpower, K != "max")
 datpower$K <- as.numeric(datpower$K)
 
 datpowermax$score <- factor(datpowermax$score, levels = c("lof", "kNN"))
 levels(datpowermax$score) <- c("LOF", "kNN")
+datpowermaxone$score <- factor(datpowermaxone$score, levels = c("lof", "kNN"))
+levels(datpowermaxone$score) <- c("LOF", "kNN")
 
 ################################################################################
-# Plot power - prior
+# Plot power - prior - median
 
 datpowerprior <- subset(datpower, method == "prior")
 datpowermaxprior <- subset(datpowermax, method == "prior")
+datpowermaxoneprior <- subset(datpowermaxone, method == "prior")
 
+datpowermaxonepriormedian <- datpowermaxoneprior %>%
+  group_by(method, score, nref, dataset) %>%
+  summarise(power_med = median(power),
+            upper = quantile(power, 0.75),
+            lower = quantile(power, 0.25))
 
-p <- ggplot(datpowermaxprior, aes(x = nref, y = power, color = score)) +
-  geom_point() + geom_line(aes(group = interaction(score))) +
-  # geom_linerange(aes(ymin = power + sd_power, ymax = power - sd_power)) +
-  # facet_grid(row = vars(dataset), scales = "free") +
+p <- ggplot(datpowermaxonepriormedian, aes(x = nref, y = power_med, color = score)) +
+  geom_point() +
+  geom_line(aes(group = interaction(score))) +
+  # geom_boxplot(aes(group = interaction(score, nref)), outliers = TRUE, outlier.size = 0.5) +
+  # stat_summary(fun = "median", geom = "line") +
+  # geom_linerange(aes(ymin = upper, ymax = lower), linewidth = 1.1, alpha = 0.5) +
   facet_wrap(vars(dataset), scales = "free_y") +
   scale_color_viridis_d(end = 0.8, option = "B", guide = guide_legend(override.aes = list(size = 2), title = element_blank())) +
   theme_bw() +
   xlab(expression(N[ref]+N[calib])) +
   # scale_x_continuous(breaks = c(500, 1:5*1000)) +
+  ylim(c(0, 1.0)) +
   ylab("Estimated Power") +
   # ggtitle("Prior GOF") +
   theme(text = element_text(size = 9),
         # title = element_text(size = 7),
         # panel.grid.minor = element_blank(),
-        legend.position = c(0.99, 0.5),
+        legend.position = c(0.28, 0.01),
         legend.justification = c("right", "bottom"),
         legend.key.size = unit(9, 'pt'),
         # plot.margin = unit(c(0.1,0.1,0.1,0.1), "cm"),
@@ -111,7 +133,7 @@ p <- ggplot(datpowermaxprior, aes(x = nref, y = power, color = score)) +
   )
 # colorblindr::cvd_grid(p)
 p
-colorblindr::cvd_grid()
+# colorblindr::cvd_grid()
 
 ggsave(filename = here("result_figures", paste0(results_name, "_power_prior_max.pdf")),
        plot = p,
@@ -119,6 +141,45 @@ ggsave(filename = here("result_figures", paste0(results_name, "_power_prior_max.
        height = 0.7 * columnwidth,
        unit = "in")
 
+################################################################################
+# Plot power - prior
+
+datpowerprior <- subset(datpower, method == "prior")
+datpowermaxprior <- subset(datpowermax, method == "prior")
+datpowermaxoneprior <- subset(datpowermaxone, method == "prior")
+
+p <- ggplot(datpowermaxoneprior, aes(x = nref, y = power, color = score)) +
+  # geom_point() +
+  # geom_line(aes(group = interaction(score))) +
+  geom_boxplot(aes(group = interaction(score, nref)), outliers = TRUE, outlier.size = 0.5) +
+  stat_summary(fun = "median", geom = "line") +
+  # geom_linerange(aes(ymin = upper, ymax = lower), linewidth = 1.1, alpha = 0.5) +
+  facet_wrap(vars(dataset), scales = "free_y") +
+  scale_color_viridis_d(end = 0.8, option = "B", guide = guide_legend(override.aes = list(size = 2), title = element_blank())) +
+  theme_bw() +
+  xlab(expression(N[ref]+N[calib])) +
+  # scale_x_continuous(breaks = c(500, 1:5*1000)) +
+  ylim(c(0, 1.0)) +
+  ylab("Estimated Power") +
+  # ggtitle("Prior GOF") +
+  theme(text = element_text(size = 9),
+        # title = element_text(size = 7),
+        # panel.grid.minor = element_blank(),
+        legend.position = c(0.28, 0.01),
+        legend.justification = c("right", "bottom"),
+        legend.key.size = unit(9, 'pt'),
+        # plot.margin = unit(c(0.1,0.1,0.1,0.1), "cm"),
+        # axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)
+  )
+# colorblindr::cvd_grid(p)
+p
+# colorblindr::cvd_grid()
+
+ggsave(filename = here("result_figures", paste0(results_name, "_power_prior_max_boxplot.pdf")),
+       plot = p,
+       width = twocolumnwidth,
+       height = 0.7 * columnwidth,
+       unit = "in")
 
 ################################################################################
 # Plot power - prior - K varying
@@ -130,9 +191,16 @@ levels(datpowerprior$nref) <- paste0("N[ref]+N[calib]==",levels(datpowerprior$nr
 datpowermaxprior$nref <- factor(datpowermaxprior$nref, levels = c(500, 1000, 2000, 3000, 4000, 5000))
 levels(datpowermaxprior$nref) <- paste0("N[ref]+N[calib]==",levels(datpowermaxprior$nref))
 
-p <- ggplot(datpowerprior, aes(x = K, y = power, color = score)) +
+datpowerpriormedian <- datpowerprior %>%
+  group_by(method, score, nref, K, dataset) %>%
+  summarise(power = median(power))
+datpowermaxpriormedian <- datpowermaxprior %>%
+  group_by(method, score, nref, K, dataset) %>%
+  summarise(power = median(power))
+
+p <- ggplot(datpowerpriormedian, aes(x = K, y = power, color = score)) +
   geom_point() + geom_line(aes(group = interaction(method, score, nref))) +
-  geom_abline(data = datpowermaxprior, aes(intercept = power, slope = 0, color = score), show.legend = FALSE) +
+  geom_abline(data = datpowermaxpriormedian, aes(intercept = power, slope = 0, color = score), show.legend = FALSE) +
   facet_grid(row = vars(nref), col = vars(dataset), labeller = label_parsed) +
   scale_color_viridis_d(end = 0.8, option = "B", guide = guide_legend(override.aes = list(size = 1), title = element_blank())) +
   theme_bw() +
@@ -157,15 +225,19 @@ ggsave(filename = here("result_figures", paste0(results_name, "_power_prior_all_
 ################################################################################
 # Plot power - prior vs localized prior
 
-datpowermaxpriorpost <- subset(datpowermax, method == "prior" | (method == "post" & nref == 50000 & npost == 500) | (method == "post" & nref == 100000 & npost == 1000))
-datpowermaxpriorpost$method <- factor(datpowermaxpriorpost$method, levels = c("prior", "post"))
-levels(datpowermaxpriorpost$method) <- c("Prior GoF", "Localized Prior GoF (1%)")
-datpowermaxpriorpost$nref <- factor(datpowermaxpriorpost$nref)
-levels(datpowermaxpriorpost$nref) <- c("500", "1000", "2000", "3000", "4000", "5000", "50 k", "100 k")
+datpowermaxonepriorpost <- subset(datpowermaxone, method == "prior" | (method == "post" & nref == 50000 & npost == 500) | (method == "post" & nref == 100000 & npost == 1000))
+datpowermaxonepriorpost$method <- factor(datpowermaxonepriorpost$method, levels = c("prior", "post"))
+levels(datpowermaxonepriorpost$method) <- c("Prior GoF", "Localized Prior GoF (1%)")
+datpowermaxonepriorpost$nref <- factor(datpowermaxonepriorpost$nref)
+levels(datpowermaxonepriorpost$nref) <- c("500", "1000", "2000", "3000", "4000", "5000", "50 k", "100 k")
 
-p <- ggplot(datpowermaxpriorpost, aes(x = nref, y = power, color = score)) +
+datpowermaxonepriorpostmedian <- datpowermaxonepriorpost %>%
+  group_by(method, score, nref, K, dataset) %>%
+  summarise(power = median(power))
+
+p <- ggplot(datpowermaxonepriorpostmedian, aes(x = nref, y = power, color = score)) +
   geom_point() + geom_line(aes(group = interaction(score))) +
-  geom_linerange(aes(ymin = power + sd_power, ymax = power - sd_power)) +
+  # geom_linerange(aes(ymin = power + sd_power, ymax = power - sd_power)) +
   facet_grid(col = vars(method), row = vars(dataset), scales = "free_x", space = "free") +
   scale_color_viridis_d(end = 0.8, option = "B", guide = guide_legend(override.aes = list(size = 2), title = element_blank())) +
   theme_bw() +
@@ -193,11 +265,11 @@ ggsave(filename = here("result_figures", paste0(results_name, "_power_prior_loca
 # Plot power - freq rej only
 
 datpowerfreq <- subset(datpower, method %in% c("hp.rej") & npost == 1000)
-datpowermaxfreq <- subset(datpowermax, method %in% c("hp.rej") & npost == 1000)
+datpowermaxonefreq <- subset(datpowermaxone, method %in% c("hp.rej") & npost == 1000)
 # datpowerfreq$nref <- as.factor(datpowerfreq$nref)
-# datpowermaxfreq$nref <- as.factor(datpowermaxfreq$nref)
+# datpowermaxonefreq$nref <- as.factor(datpowermaxonefreq$nref)
 
-p <- ggplot(datpowermaxfreq, aes(x = nref, y = power, color = score)) +
+p <- ggplot(datpowermaxonefreq, aes(x = nref, y = power, color = score)) +
   geom_point() + geom_line(aes(group = interaction(score))) +
   # geom_linerange(aes(ymin = power + sd_power, ymax = power - sd_power)) +
   # facet_grid(row = vars(dataset), scales = "free") +
@@ -229,11 +301,11 @@ ggsave(filename = here("result_figures", paste0(results_name, "_power_freq_max_n
 # Plot power - freq - rej loclin ridge - npost 1000
 
 datpowerfreq <- subset(datpower, method %in% c("hp.rej", "hp.loclin", "hp.ridge") & npost == 1000)
-datpowermaxfreq <- subset(datpowermax, method %in% c("hp.rej", "hp.loclin", "hp.ridge") & npost == 1000)
-datpowermaxfreq$method <- factor(datpowermaxfreq$method, levels = c("hp.rej", "hp.loclin", "hp.ridge"))
-levels(datpowermaxfreq$method) <- c("Rejection", "Local Linear Regression", "Ridge Regression")
+datpowermaxonefreq <- subset(datpowermaxone, method %in% c("hp.rej", "hp.loclin", "hp.ridge") & npost == 1000)
+datpowermaxonefreq$method <- factor(datpowermaxonefreq$method, levels = c("hp.rej", "hp.loclin", "hp.ridge"))
+levels(datpowermaxonefreq$method) <- c("Rejection", "Local Linear Regression", "Ridge Regression")
 
-p <- ggplot(datpowermaxfreq, aes(x = nref, y = power, color = score)) +
+p <- ggplot(datpowermaxonefreq, aes(x = nref, y = power, color = score)) +
   geom_point() + geom_line(aes(group = interaction(score))) +
   # geom_linerange(aes(ymin = power + sd_power, ymax = power - sd_power)) +
   facet_grid(row = vars(dataset), col = vars(method)) +
@@ -263,13 +335,13 @@ ggsave(filename = here("result_figures", paste0(results_name, "_power_freq_max_n
 # Plot power - rej loclin ridge - all npost
 
 datpowerfreq <- subset(datpower, method %in% c("hp.rej", "hp.loclin", "hp.ridge"))
-datpowermaxfreq <- subset(datpowermax, method %in% c("hp.rej", "hp.loclin", "hp.ridge"))
-datpowermaxfreq$method <- factor(datpowermaxfreq$method, levels = c("hp.rej", "hp.loclin", "hp.ridge"))
-levels(datpowermaxfreq$method) <- c("Rejection", "Local Linear Regression", "Ridge Regression")
-datpowermaxfreq$nref <- factor(datpowermaxfreq$nref)
+datpowermaxonefreq <- subset(datpowermaxone, method %in% c("hp.rej", "hp.loclin", "hp.ridge"))
+datpowermaxonefreq$method <- factor(datpowermaxonefreq$method, levels = c("hp.rej", "hp.loclin", "hp.ridge"))
+levels(datpowermaxonefreq$method) <- c("Rejection", "Local Linear Regression", "Ridge Regression")
+datpowermaxonefreq$nref <- factor(datpowermaxonefreq$nref)
 
 
-p <- ggplot(datpowermaxfreq, aes(x = npost, y = power, color = score, linetype = nref)) +
+p <- ggplot(datpowermaxonefreq, aes(x = npost, y = power, color = score, linetype = nref)) +
   geom_point() + geom_line(aes(group = interaction(score,nref))) +
   # geom_linerange(aes(ymin = power + sd_power, ymax = power - sd_power), show.legend = FALSE) +
   facet_grid(row = vars(dataset), col = vars(method)) +
@@ -282,7 +354,7 @@ p <- ggplot(datpowermaxfreq, aes(x = npost, y = power, color = score, linetype =
   theme(text = element_text(size = 10),
         # title = element_text(size = 7),
         # panel.grid.minor = element_blank(),
-        legend.position = c(0.66, 0.7),
+        legend.position = c(0.64, 0.7),
         legend.justification = c("right", "bottom"),
         legend.key.size = unit(10, 'pt'),
         plot.margin = unit(c(5.5, 9.5, 5.5, 5.5), "pt"),
@@ -580,7 +652,7 @@ annotation_custom2 <- function (grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax
   layer(data = data, stat = StatIdentity, position = PositionIdentity,
         geom = GeomCustomAnn, inherit.aes = FALSE, params = list(grob = grob,
                                                                  xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax))
-  }
+}
 
 ptmp <- ggplot(datpvalfreq, aes(x = xid, y = pval, color = score, linetype = nref)) +
   geom_line() +
