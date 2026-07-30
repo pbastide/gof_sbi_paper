@@ -108,18 +108,19 @@ datpowermaxonepriormedian <- datpowermaxoneprior %>%
             upper = quantile(power, 0.75),
             lower = quantile(power, 0.25))
 
-p <- ggplot(datpowermaxonepriormedian, aes(x = nref, y = power_med, color = score)) +
-  geom_point() +
-  geom_line(aes(group = interaction(score))) +
-  # geom_boxplot(aes(group = interaction(score, nref)), outliers = TRUE, outlier.size = 0.5) +
-  # stat_summary(fun = "median", geom = "line") +
+p <- ggplot(datpowermaxoneprior, aes(x = nref, y = power, color = score, fill = score)) +
+  # geom_point(size = 0.8) +
+  # geom_line(aes(group = interaction(score))) +
+  geom_boxplot(aes(group = interaction(score, nref)), outliers = TRUE, outlier.size = 0.5, position = "identity", alpha = 0.2, width = 200) +
+  stat_summary(fun = "median", geom = "line") +
   # geom_linerange(aes(ymin = upper, ymax = lower), linewidth = 1.1, alpha = 0.5) +
   facet_wrap(vars(dataset), scales = "free_y") +
   scale_color_viridis_d(end = 0.8, option = "B", guide = guide_legend(override.aes = list(size = 2), title = element_blank())) +
+  scale_fill_viridis_d(end = 0.8, option = "B", guide = guide_legend(override.aes = list(size = 2), title = element_blank())) +
   theme_bw() +
   xlab(expression(N[ref]+N[calib])) +
   # scale_x_continuous(breaks = c(500, 1:5*1000)) +
-  ylim(c(0, 1.0)) +
+  ylim(c(0.15, 1.0)) +
   ylab("Estimated Power") +
   # ggtitle("Prior GOF") +
   theme(text = element_text(size = 9),
@@ -142,24 +143,24 @@ ggsave(filename = here("result_figures", paste0(results_name, "_power_prior_max.
        unit = "in")
 
 ################################################################################
-# Plot power - prior
+# Plot power - prior - boxplot
 
 datpowerprior <- subset(datpower, method == "prior")
 datpowermaxprior <- subset(datpowermax, method == "prior")
 datpowermaxoneprior <- subset(datpowermaxone, method == "prior")
 
-p <- ggplot(datpowermaxoneprior, aes(x = nref, y = power, color = score)) +
+p <- ggplot(datpowermaxoneprior, aes(x = nref, y = power, color = score, fill = score)) +
   # geom_point() +
   # geom_line(aes(group = interaction(score))) +
-  geom_boxplot(aes(group = interaction(score, nref)), outliers = TRUE, outlier.size = 0.5) +
+  geom_boxplot(aes(group = interaction(score, nref)), outliers = TRUE, outlier.size = 0.5, position = "identity", alpha = 0.2, width = 200) +
   stat_summary(fun = "median", geom = "line") +
   # geom_linerange(aes(ymin = upper, ymax = lower), linewidth = 1.1, alpha = 0.5) +
   facet_wrap(vars(dataset), scales = "free_y") +
   scale_color_viridis_d(end = 0.8, option = "B", guide = guide_legend(override.aes = list(size = 2), title = element_blank())) +
+  scale_fill_viridis_d(end = 0.8, option = "B", guide = guide_legend(override.aes = list(size = 2), title = element_blank())) +
   theme_bw() +
   xlab(expression(N[ref]+N[calib])) +
   # scale_x_continuous(breaks = c(500, 1:5*1000)) +
-  ylim(c(0, 1.0)) +
   ylab("Estimated Power") +
   # ggtitle("Prior GOF") +
   theme(text = element_text(size = 9),
@@ -188,19 +189,19 @@ datpowerprior$score <- factor(datpowerprior$score, levels = c("lof", "kNN"))
 levels(datpowerprior$score) <- c("LOF", "kNN")
 datpowerprior$nref <- factor(datpowerprior$nref, levels = c(500, 1000, 2000, 3000, 4000, 5000))
 levels(datpowerprior$nref) <- paste0("N[ref]+N[calib]==",levels(datpowerprior$nref))
-datpowermaxprior$nref <- factor(datpowermaxprior$nref, levels = c(500, 1000, 2000, 3000, 4000, 5000))
-levels(datpowermaxprior$nref) <- paste0("N[ref]+N[calib]==",levels(datpowermaxprior$nref))
+datpowermaxoneprior$nref <- factor(datpowermaxoneprior$nref, levels = c(500, 1000, 2000, 3000, 4000, 5000))
+levels(datpowermaxoneprior$nref) <- paste0("N[ref]+N[calib]==",levels(datpowermaxoneprior$nref))
 
 datpowerpriormedian <- datpowerprior %>%
   group_by(method, score, nref, K, dataset) %>%
   summarise(power = median(power))
-datpowermaxpriormedian <- datpowermaxprior %>%
+datpowermaxonepriormedian <- datpowermaxoneprior %>%
   group_by(method, score, nref, K, dataset) %>%
   summarise(power = median(power))
 
 p <- ggplot(datpowerpriormedian, aes(x = K, y = power, color = score)) +
   geom_point() + geom_line(aes(group = interaction(method, score, nref))) +
-  geom_abline(data = datpowermaxpriormedian, aes(intercept = power, slope = 0, color = score), show.legend = FALSE) +
+  geom_abline(data = datpowermaxonepriormedian, aes(intercept = power, slope = 0, color = score), show.legend = FALSE) +
   facet_grid(row = vars(nref), col = vars(dataset), labeller = label_parsed) +
   scale_color_viridis_d(end = 0.8, option = "B", guide = guide_legend(override.aes = list(size = 1), title = element_blank())) +
   theme_bw() +
@@ -411,6 +412,42 @@ ggsave(filename = here("result_figures", paste0(results_name, "_power_freq_max_n
        plot = p,
        width = twocolumnwidth,
        height = columnwidth * 1.4,
+       unit = "in")
+
+################################################################################
+# Plot power - rej only - all npost
+datpowerfreq <- subset(datpower, method %in% c("hp.rej"))
+datpowermaxonefreq <- subset(datpowermaxone, method %in% c("hp.rej"))
+datpowermaxonefreq$nref <- factor(datpowermaxonefreq$nref)
+
+p <- ggplot(datpowermaxonefreq, aes(x = npost, y = power, color = score, linetype = nref)) +
+  geom_point() + geom_line(aes(group = interaction(score,nref))) +
+  # geom_linerange(aes(ymin = power + sd_power, ymax = power - sd_power), show.legend = FALSE) +
+  facet_grid(col = vars(dataset)) +
+  scale_color_viridis_d(end = 0.8, option = "B", guide = guide_legend(override.aes = list(size = 2), title = element_blank())) +
+  theme_bw() +
+  xlab(expression(N[post])) +
+  scale_linetype_discrete(labels = c("50k", "100k"), name = expression(N[ref])) +
+  # scale_x_continuous(breaks = c(50000, 100000), labels = c("50k", "100k")) +
+  ylab("Estimated Power") +
+  theme(text = element_text(size = 10),
+        # title = element_text(size = 7),
+        # panel.grid.minor = element_blank(),
+        legend.position = c(0.99, 0.99),
+        legend.justification = c("right", "top"),
+        legend.key.size = unit(10, 'pt'),
+        plot.margin = unit(c(5.5, 9.5, 5.5, 5.5), "pt"),
+        legend.box = "horizontal",
+        legend.title.position = "left",
+        legend.margin = margin(2, 2, 2, 2)
+        # axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)
+  )
+p
+
+ggsave(filename = here("result_figures", paste0(results_name, "_power_freq_max_all_npost_rej_only.pdf")),
+       plot = p,
+       width = twocolumnwidth,
+       height = columnwidth * 0.7,
        unit = "in")
 
 ################################################################################

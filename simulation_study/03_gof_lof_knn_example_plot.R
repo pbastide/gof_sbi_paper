@@ -46,9 +46,7 @@ scen.ref <- 2
 scen.test <- 1
 
 ## Read data
-folder <- file.path(PATH, "..", "..", "gof-abc-data",
-                    "20240401_data_fast",
-                    "indep_dep_4pop_SNP_prior_Uniform_WINDOWS_NC_MediumMoinsT_GOOD")
+folder <- here("diyabc_reftables", "depindep")
 PATH.yellow.S1 <- file.path(folder, "yellow_points_from_depindep_fast_NoConditionMediumMoinsT_reftableRF_110000_param_S1.txt")
 PATH.yellow.S2 <- file.path(folder, "yellow_points_from_depindep_fast_NoConditionMediumMoinsT_reftableRF_110000_param_S2.txt")
 data1.S1 <- as.matrix(read.table(PATH.yellow.S1, header = FALSE))
