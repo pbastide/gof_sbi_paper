@@ -1,4 +1,4 @@
-# Repository to reproduce the analyses in Le Mailloux, Bastide, Marin, Estoup 2024+
+# Repository to reproduce the analyses in Le Mailloux, Bastide, Marin, Estoup (2026) Goodness of Fit for Bayesian Generative Models with Applications in Population Genetics, Annals of Applied Statistics
 
 ## Content
 
