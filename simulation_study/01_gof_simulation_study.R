@@ -147,7 +147,6 @@ for (dataname in c("gaussianlaplace", "depindep", "human")) {
       sim.fun.ref <- all_data$sim.fun.ref
       lmonfun <- all_data$lmonfun
       path_to_sim <- ""
-      rm(all_data)
 
       ## transformation of parameters (for loclin and ridge regression)
       param_transform <- rep("logit", 2)
@@ -159,6 +158,8 @@ for (dataname in c("gaussianlaplace", "depindep", "human")) {
       }
       names(param_transform) <- names(param_lower_bound) <- names(param_upper_bound) <- colnames(param.ref.all)
       trans_and_back <- abcgof:::check_param_transform(param.ref.all, param_transform, param_lower_bound, param_upper_bound)
+
+      rm(all_data)
     }
 
     ################################################################################
@@ -443,41 +444,43 @@ for (dataname in c("gaussianlaplace", "depindep", "human")) {
 
     for (n.ref.prior in n.ref.prior.all) {
       set.seed(1289)
-      ## file management
-      results_name_nref <- paste0(results_name, "_nrep_", n.ref.prior)
-      res_file <-  here("results", paste0(results_name_nref, "_prior.rds"))
-      if (!file.exists(res_file)) { # only run if result file does not exist
-        ## Subset of the data for reference
-        ind_ref <- sample(1:nrow(data.ref.normalized.all), n.ref.prior, replace = FALSE)
-        data.ref.normalized <- data.ref.normalized.all[ind_ref, ]
-        data.ref.replica.normalized <- data.ref.replica.normalized.all[ind_ref, ]
-        param.ref <- param.ref.all[ind_ref, ]
-        ## Subset of the data for test (pods)
-        ind_test <- sample(1:nrow(data.test.normalized.all), n.test, replace = FALSE)
-        data.test.normalized <- data.test.normalized.all[ind_test, ]
-        ## Split reference table between calibration and reference
-        n.calib.prior <- floor(split * n.ref.prior)
-        calibid <- sample(seq_len(nrow(data.ref.normalized)), size = n.calib.prior)
-        data.norm.calib.prior <- data.ref.normalized[calibid, ]
-        data.norm.ref.prior <- data.ref.normalized[-calibid, ]
-        data.norm.ref.rep.prior <- data.ref.replica.normalized[-calibid, ] # replicate for post gof
-        ## Precomputation of distances for improved speed
-        Tab.dbscan <- dbscan::kNN(data.norm.ref.prior, max(k_all)) #Pre-computation
-        dist <- Tab.dbscan$dist
-        id <- Tab.dbscan$id
-        ## Prior GoF
-        gof.prior <- abcgof::gof.fit(data.test = data.test.normalized,
-                                     data.ref = data.norm.ref.prior,
-                                     data.calib = data.norm.calib.prior,
-                                     k = k_all,
-                                     k_range = k_range,
-                                     score = c("lof", "kNN"),
-                                     ncores = ncores,
-                                     kdist = dist, kid = id)
-        ## Power computation
-        gof.prior <- add_power_parameters(gof.prior, level, dataname, test_in_alternative, "prior", n.ref.prior, n.ref.prior)
-        ## save the results
-        saveRDS(gof.prior, file = res_file)
+      for (nrepprior in 1:25) {
+        ## file management
+        results_name_nref <- paste0(results_name, "_nrep_", n.ref.prior)
+        res_file <-  here("results", paste0(results_name_nref, "_prior_", nrepprior, ".rds"))
+        if (!file.exists(res_file)) { # only run if result file does not exist
+          ## Subset of the data for reference
+          ind_ref <- sample(1:nrow(data.ref.normalized.all), n.ref.prior, replace = FALSE)
+          data.ref.normalized <- data.ref.normalized.all[ind_ref, ]
+          data.ref.replica.normalized <- data.ref.replica.normalized.all[ind_ref, ]
+          param.ref <- param.ref.all[ind_ref, ]
+          ## Subset of the data for test (pods)
+          ind_test <- sample(1:nrow(data.test.normalized.all), n.test, replace = FALSE)
+          data.test.normalized <- data.test.normalized.all[ind_test, ]
+          ## Split reference table between calibration and reference
+          n.calib.prior <- floor(split * n.ref.prior)
+          calibid <- sample(seq_len(nrow(data.ref.normalized)), size = n.calib.prior)
+          data.norm.calib.prior <- data.ref.normalized[calibid, ]
+          data.norm.ref.prior <- data.ref.normalized[-calibid, ]
+          data.norm.ref.rep.prior <- data.ref.replica.normalized[-calibid, ] # replicate for post gof
+          ## Precomputation of distances for improved speed
+          Tab.dbscan <- dbscan::kNN(data.norm.ref.prior, max(k_all)) #Pre-computation
+          dist <- Tab.dbscan$dist
+          id <- Tab.dbscan$id
+          ## Prior GoF
+          gof.prior <- abcgof::gof.fit(data.test = data.test.normalized,
+                                       data.ref = data.norm.ref.prior,
+                                       data.calib = data.norm.calib.prior,
+                                       k = k_all,
+                                       k_range = k_range,
+                                       score = c("lof", "kNN"),
+                                       ncores = ncores,
+                                       kdist = dist, kid = id)
+          ## Power computation
+          gof.prior <- add_power_parameters(gof.prior, level, dataname, test_in_alternative, "prior", n.ref.prior, n.ref.prior)
+          ## save the results
+          saveRDS(gof.prior, file = res_file)
+        }
       }
     }
 
